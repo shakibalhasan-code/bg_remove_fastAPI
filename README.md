@@ -1,6 +1,214 @@
 # Background Remover API
 
-A FastAPI-based REST API for removing backgrounds from images using AI (powered by the popular [backgroundremover](https://github.com/nadermx/backgroundremover) library).
+A production-ready FastAPI application for removing backgrounds from images using AI. Powered by the popular [backgroundremover](https://github.com/nadermx/backgroundremover) library.
+
+🔗 **Repository**: https://github.com/shakibalhasan-code/bg_remove_fastAPI
+
+## ✨ Features
+
+- 🎨 AI-powered background removal
+- 🚀 Fast REST API built with FastAPI
+- 🎯 Multiple AI models (u2net, u2net_human_seg, u2netp)
+- 🔧 Customizable options (custom backgrounds, masks, edge quality)
+- 💾 Memory-efficient (no disk storage, direct streaming)
+- 📝 Interactive API documentation (Swagger UI)
+- 🖼️ Supports JPG, PNG, HEIC, HEIF formats
+- 🔒 Production-ready with CORS, logging, and error handling
+
+## 🚀 Quick Deploy to Hostinger VPS
+
+### One-Command Deployment:
+
+```bash
+# SSH into your VPS
+ssh root@YOUR_VPS_IP
+
+# Download and run deployment script
+wget https://raw.githubusercontent.com/shakibalhasan-code/bg_remove_fastAPI/master/deploy.sh
+chmod +x deploy.sh
+./deploy.sh
+```
+
+**Done!** Your API is now running. See [HOSTINGER_DEPLOYMENT.md](HOSTINGER_DEPLOYMENT.md) for details.
+
+## 📖 Documentation
+
+- **[HOSTINGER_DEPLOYMENT.md](HOSTINGER_DEPLOYMENT.md)** - Complete VPS deployment guide
+- **[QUICKSTART.md](QUICKSTART.md)** - 5-minute deployment checklist
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Advanced deployment options (Docker, systemd)
+
+## 🔄 Update Workflow
+
+After pushing changes to GitHub:
+
+```bash
+# SSH to VPS
+ssh root@YOUR_VPS_IP
+
+# Run update script
+cd /var/www/bg_remove
+./update.sh
+```
+
+## 🧪 Local Development
+
+```bash
+# Clone repository
+git clone https://github.com/shakibalhasan-code/bg_remove_fastAPI.git
+cd bg_remove_fastAPI
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run development server
+python main.py
+```
+
+Visit http://localhost:8000/docs
+
+## 📡 API Endpoints
+
+### Simple Background Removal
+```bash
+POST /remove-background-simple
+```
+Upload an image and get transparent PNG back.
+
+### Advanced Background Removal
+```bash
+POST /remove-background
+```
+Full control with parameters:
+- `model`: AI model choice (u2net, u2net_human_seg, u2netp)
+- `background_color`: Custom background (e.g., "255,0,0" for red)
+- `only_mask`: Return binary mask instead
+
+### Health Check
+```bash
+GET /health
+```
+
+## 💻 Usage Examples
+
+### cURL
+```bash
+curl -X POST "http://YOUR_VPS_IP/remove-background-simple" \
+  -F "file=@image.jpg" \
+  -o output.png
+```
+
+### Python
+```python
+import requests
+
+with open("input.jpg", "rb") as f:
+    response = requests.post(
+        "http://YOUR_VPS_IP/remove-background-simple",
+        files={"file": f}
+    )
+
+with open("output.png", "wb") as f:
+    f.write(response.content)
+```
+
+### JavaScript (Fetch)
+```javascript
+const formData = new FormData();
+formData.append('file', fileInput.files[0]);
+
+fetch('http://YOUR_VPS_IP/remove-background-simple', {
+    method: 'POST',
+    body: formData
+})
+.then(response => response.blob())
+.then(blob => {
+    const url = URL.createObjectURL(blob);
+    // Use the image
+});
+```
+
+## 🔧 Configuration
+
+### Update CORS Origins
+Edit `main.py`:
+```python
+ALLOWED_ORIGINS = ["https://your-frontend-domain.com"]
+```
+
+### Adjust File Size Limit
+Edit `main.py`:
+```python
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
+```
+
+### Configure Workers (Performance)
+Edit `gunicorn_conf.py`:
+```python
+workers = (2 * CPU_CORES) + 1
+```
+
+## 🛠️ Useful Commands
+
+```bash
+# Check API status
+sudo systemctl status bg-remover-api
+
+# View logs
+sudo journalctl -u bg-remover-api -f
+
+# Restart API
+sudo systemctl restart bg-remover-api
+
+# Test health
+curl http://localhost:8000/health
+```
+
+## 📊 System Requirements
+
+- **RAM**: 2GB minimum, 4GB+ recommended
+- **Python**: 3.10 or 3.11 (3.13 has compatibility issues)
+- **Disk**: ~500MB for models and dependencies
+- **OS**: Ubuntu 20.04+
+
+## 🔒 Security Features
+
+- CORS middleware (configurable)
+- File size validation (10MB default)
+- File type validation
+- Request logging
+- Error handling
+- Health check endpoint
+
+## 🎯 Performance Tips
+
+1. **Use GPU** for 5-10x faster processing
+2. **Adjust workers** based on CPU cores
+3. **Enable caching** - models cached after first use
+4. **Use CDN** for high traffic
+5. **Choose right model**:
+   - `u2net`: Best quality (default)
+   - `u2net_human_seg`: Best for portraits
+   - `u2netp`: Fastest processing
+
+## 📝 License
+
+MIT License - Feel free to use in your projects!
+
+## 🙏 Credits
+
+- [backgroundremover](https://github.com/nadermx/backgroundremover) - Background removal library
+- [FastAPI](https://fastapi.tiangolo.com/) - Web framework
+- [U-2-Net](https://github.com/xuebinqin/U-2-Net) - Deep learning model
+
+## 📞 Support
+
+- Issues: [GitHub Issues](https://github.com/shakibalhasan-code/bg_remove_fastAPI/issues)
+- Documentation: See [HOSTINGER_DEPLOYMENT.md](HOSTINGER_DEPLOYMENT.md)
+
+---
+
+Made with ❤️ for production deployment
+
 
 ## Features
 
