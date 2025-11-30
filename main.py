@@ -284,13 +284,23 @@ if __name__ == "__main__":
     import uvicorn
     import socket
     
-    # Get local IP address
-    hostname = socket.gethostname()
-    try:
-        local_ip = socket.gethostbyname(hostname)
-    except:
-        local_ip = "127.0.0.1"
+    # Get actual network IP (not loopback)
+    def get_network_ip():
+        try:
+            # Create a socket to get the actual network IP
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))  # Connect to Google DNS (doesn't actually send data)
+            network_ip = s.getsockname()[0]
+            s.close()
+            return network_ip
+        except Exception:
+            # Fallback: try to get from hostname
+            try:
+                return socket.gethostbyname(socket.gethostname())
+            except:
+                return "0.0.0.0"
     
+    local_ip = get_network_ip()
     port = 8000
     
     logger.info("Starting Background Remover API server...")
