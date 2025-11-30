@@ -6,6 +6,19 @@
 - SSH access to your VPS
 - Your GitHub repository is public or you have SSH keys set up
 
+## 📁 Organized Multi-App Structure
+
+This deployment creates an organized structure in `/var/www/bg_remove/`, allowing you to run multiple APIs:
+
+```
+/var/www/
+├── bg_remove/          # This API (port 8000)
+├── another_api/        # Another API (port 8001)
+└── ...                 # More apps
+```
+
+See [MULTI_APP_DEPLOYMENT.md](MULTI_APP_DEPLOYMENT.md) for running multiple apps.
+
 ## 🚀 One-Command Deployment
 
 ### Step 1: Connect to Your VPS
@@ -31,12 +44,12 @@ chmod +x deploy.sh
 
 **That's it!** The script will:
 1. ✅ Install Python 3.11, Nginx, and dependencies
-2. ✅ Clone your repository
+2. ✅ Clone your repository to `/var/www/bg_remove/`
 3. ✅ Set up virtual environment
 4. ✅ Install Python packages
-5. ✅ Configure systemd service
+5. ✅ Configure systemd service (`bg_remove-api`)
 6. ✅ Configure Nginx reverse proxy
-7. ✅ Start the API
+7. ✅ Start the API on port 8000
 
 ---
 
@@ -49,12 +62,16 @@ After deployment completes:
 curl http://localhost:8000/health
 
 # Test from your computer (replace with your VPS IP)
-curl http://YOUR_VPS_IP/health
+curl http://YOUR_VPS_IP/bg_remove/health
 ```
 
 **Visit in browser:**
-- API Docs: `http://YOUR_VPS_IP/docs`
-- Health Check: `http://YOUR_VPS_IP/health`
+- API Docs: `http://YOUR_VPS_IP/bg_remove/docs`
+- Health Check: `http://YOUR_VPS_IP/bg_remove/health`
+
+**Or via direct port access:**
+- API Docs: `http://YOUR_VPS_IP:8000/docs`
+- Health Check: `http://YOUR_VPS_IP:8000/health`
 
 ---
 
@@ -80,35 +97,35 @@ pip install -r requirements.txt
 sudo systemctl restart bg-remover-api
 ```
 
----
-
-## 🔧 Useful Commands
-
 ### Check API Status
 ```bash
-sudo systemctl status bg-remover-api
+sudo systemctl status bg_remove-api
 ```
 
 ### View Logs (Real-time)
 ```bash
-sudo journalctl -u bg-remover-api -f
+sudo journalctl -u bg_remove-api -f
 ```
 
 ### View Last 100 Log Lines
 ```bash
-sudo journalctl -u bg-remover-api -n 100
+sudo journalctl -u bg_remove-api -n 100
 ```
 
 ### Restart API
 ```bash
-sudo systemctl restart bg-remover-api
+sudo systemctl restart bg_remove-api
 ```
 
 ### Stop API
 ```bash
-sudo systemctl stop bg-remover-api
+sudo systemctl stop bg_remove-api
 ```
 
+### Start API
+```bash
+sudo systemctl start bg_remove-api
+```
 ### Start API
 ```bash
 sudo systemctl start bg-remover-api
@@ -135,14 +152,10 @@ In your domain registrar (like Namecheap, GoDaddy), add an A record:
 ```
 Type: A
 Host: @ (or your-api subdomain)
-Value: YOUR_VPS_IP
-TTL: 300
-```
-
 ### Step 2: Update Nginx Configuration
 
 ```bash
-sudo nano /etc/nginx/sites-available/bg-remover-api
+sudo nano /etc/nginx/sites-available/bg_remove-api
 ```
 
 Change this line:
@@ -155,6 +168,19 @@ To:
 server_name your-domain.com;
 ```
 
+Or for path-based access, change to:
+```nginx
+server_name your-domain.com;
+
+location /bg_remove/ {
+    # existing config
+}
+```
+
+Save and restart:
+server_name your-domain.com;
+```
+
 Save and restart:
 ```bash
 sudo nginx -t
@@ -164,9 +190,11 @@ sudo systemctl restart nginx
 ### Step 3: Add SSL Certificate (HTTPS)
 
 ```bash
-# Install Certbot
-sudo apt install certbot python3-certbot-nginx -y
+Now your API is available at: `https://your-domain.com`
 
+**For multiple apps**, see [MULTI_APP_DEPLOYMENT.md](MULTI_APP_DEPLOYMENT.md)
+
+---
 # Get SSL certificate
 sudo certbot --nginx -d your-domain.com
 
@@ -176,10 +204,10 @@ sudo certbot --nginx -d your-domain.com
 Now your API is available at: `https://your-domain.com`
 
 ---
-
-## 🔒 Security Configuration
-
-### 1. Update CORS Settings
+Then restart:
+```bash
+sudo systemctl restart bg_remove-api
+``` 1. Update CORS Settings
 
 Edit `/var/www/bg_remove/main.py`:
 
@@ -258,12 +286,12 @@ sudo systemctl restart bg-remover-api
 ```bash
 sudo fallocate -l 2G /swapfile
 sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-```
+```bash
+# Check service status
+sudo systemctl status bg_remove-api
 
----
+# Check logs for errors
+sudo journalctl -u bg_remove-api -n 50
 
 ## 🐛 Troubleshooting
 
@@ -319,17 +347,17 @@ nano /var/www/bg_remove/gunicorn_conf.py
 ### Models Downloading Slowly
 
 First request will be slow (downloads ~176MB of AI models). Pre-download:
+### From Command Line
 
 ```bash
-cd /var/www/bg_remove
-source venv/bin/activate
-python -c "from backgroundremover.bg import get_model; get_model('u2net')"
+# Health check
+curl http://YOUR_VPS_IP/bg_remove/health
+
+# Test background removal
+curl -X POST "http://YOUR_VPS_IP/bg_remove/remove-background-simple" \
+  -F "file=@test.jpg" \
+  -o output.png
 ```
-
----
-
-## 📞 Testing Your API
-
 ### From Command Line
 
 ```bash
@@ -342,23 +370,23 @@ curl -X POST "http://YOUR_VPS_IP/remove-background-simple" \
   -o output.png
 ```
 
-### From Python
-
 ```python
 import requests
 
 response = requests.post(
-    "http://YOUR_VPS_IP/remove-background-simple",
+    "http://YOUR_VPS_IP/bg_remove/remove-background-simple",
     files={"file": open("test.jpg", "rb")}
 )
 
 with open("output.png", "wb") as f:
     f.write(response.content)
+```h open("output.png", "wb") as f:
+    f.write(response.content)
 ```
 
 ### From Browser
 
-1. Open: `http://YOUR_VPS_IP/docs`
+1. Open: `http://YOUR_VPS_IP/bg_remove/docs`
 2. Click on "POST /remove-background-simple"
 3. Click "Try it out"
 4. Upload an image
@@ -381,8 +409,18 @@ tar -czf ~/bg_remove_backup.tar.gz main.py gunicorn_conf.py requirements.txt
 ```bash
 cd /var/www/bg_remove
 tar -xzf ~/bg_remove_backup.tar.gz
-sudo systemctl restart bg-remover-api
+sudo systemctl restart bg_remove-api
 ```
+
+---
+
+## 🔗 Running Multiple APIs
+
+Want to deploy more APIs on the same VPS? See [MULTI_APP_DEPLOYMENT.md](MULTI_APP_DEPLOYMENT.md) for:
+- Running multiple APIs simultaneously
+- Organized folder structure
+- Port management
+- Path-based vs subdomain access
 
 ---
 
@@ -402,24 +440,26 @@ sudo systemctl restart bg-remover-api
 # On your local machine (Windows)
 git add .
 git commit -m "Updated feature"
-git push origin master
-
-# On your VPS (via SSH)
-cd /var/www/bg_remove && ./update.sh
-```
-
----
-
-## 🎯 Quick Reference
-
 | Task | Command |
 |------|---------|
 | Deploy | `./deploy.sh` |
 | Update | `./update.sh` |
-| Status | `sudo systemctl status bg-remover-api` |
-| Logs | `sudo journalctl -u bg-remover-api -f` |
-| Restart | `sudo systemctl restart bg-remover-api` |
+| Status | `sudo systemctl status bg_remove-api` |
+| Logs | `sudo journalctl -u bg_remove-api -f` |
+| Restart | `sudo systemctl restart bg_remove-api` |
 | Health | `curl http://localhost:8000/health` |
+| Docs | `http://YOUR_VPS_IP/bg_remove/docs` |
+## 🎯 Quick Reference
+
+## 🆘 Need Help?
+
+1. **Check logs**: `sudo journalctl -u bg_remove-api -f`
+2. **Check Nginx**: `sudo tail -f /var/log/nginx/error.log`
+3. **Test locally**: `curl http://localhost:8000/health`
+4. **Service status**: `sudo systemctl status bg_remove-api`
+5. **Multiple apps**: See [MULTI_APP_DEPLOYMENT.md](MULTI_APP_DEPLOYMENT.md)
+
+Your API should be running smoothly! 🚀health` |
 
 ---
 

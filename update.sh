@@ -4,8 +4,11 @@
 
 set -e
 
-APP_DIR="/var/www/bg_remove"
-SERVICE_NAME="bg-remover-api"
+# Auto-detect app name from current directory
+CURRENT_DIR=$(pwd)
+APP_NAME=$(basename "$CURRENT_DIR")
+APP_DIR="$CURRENT_DIR"
+SERVICE_NAME="${APP_NAME}-api"
 
 echo "🔄 Updating Background Remover API..."
 
