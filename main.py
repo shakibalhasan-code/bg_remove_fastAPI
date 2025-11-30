@@ -282,5 +282,26 @@ async def remove_background_simple(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
+    import socket
+    
+    # Get local IP address
+    hostname = socket.gethostname()
+    try:
+        local_ip = socket.gethostbyname(hostname)
+    except:
+        local_ip = "127.0.0.1"
+    
+    port = 8000
+    
     logger.info("Starting Background Remover API server...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    logger.info("=" * 60)
+    logger.info(f"🚀 Server running at:")
+    logger.info(f"   Local:      http://127.0.0.1:{port}")
+    logger.info(f"   Network:    http://{local_ip}:{port}")
+    logger.info(f"")
+    logger.info(f"📚 Documentation:")
+    logger.info(f"   Swagger:    http://{local_ip}:{port}/docs")
+    logger.info(f"   Health:     http://{local_ip}:{port}/health")
+    logger.info("=" * 60)
+    
+    uvicorn.run(app, host="0.0.0.0", port=port)
